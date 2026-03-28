@@ -1,0 +1,48 @@
+{
+  "name": "i18n",
+  "version": "1.0.0",
+  "description": "Your Figma Plugin",
+  "main": "code.js",
+  "scripts": {
+    "lint": "eslint --ext .ts,.tsx --ignore-pattern node_modules .",
+    "lint:fix": "eslint --ext .ts,.tsx --ignore-pattern node_modules --fix .",
+    "watch": "./node_modules/.bin/tsx esbuild.bundle.mjs --watch",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "typecheck--watch": "npm run typecheck -- --watch",
+    "build": "./node_modules/.bin/tsx esbuild.bundle.mjs --build"
+  },
+  "author": "",
+  "license": "",
+  "devDependencies": {
+    "@figma/eslint-plugin-figma-plugins": "0.16.1",
+    "@figma/plugin-typings": "^1.113.0",
+    "@typescript-eslint/eslint-plugin": "8.34.0",
+    "@typescript-eslint/parser": "8.34.0",
+    "esbuild": "0.25.5",
+    "eslint": "9.28.0",
+    "tsx": "4.20.3",
+    "typescript": "5.8.3"
+  },
+  "eslintConfig": {
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:@figma/figma-plugins/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
+    "root": true,
+    "rules": {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_"
+        }
+      ]
+    }
+  }
+}
