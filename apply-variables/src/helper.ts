@@ -7,8 +7,15 @@ interface GetColors {
 interface SetColorAlias {
   type: "setColorAlias";
 }
+interface FixLayout {
+  type: "fixLayout";
+  paddingH: number;
+  paddingV: number;
+  borderRadius: number;
+  align: "MIN" | "CENTER" | "MAX" | "SPACE_BETWEEN";
+}
 
-export type Message = GetLayout | GetColors | SetColorAlias;
+export type Message = GetLayout | GetColors | SetColorAlias | FixLayout;
 
 export const findLocalCollectionByName = (
   name: string,

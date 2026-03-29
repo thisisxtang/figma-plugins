@@ -142,10 +142,28 @@
   <p class="intro_cell_content" >For layout specifications, it will also try to find the nearest (round down) variable value. E.g, the spacing is 9, it will apply 8 from the variable value.</p>
   <div class="container marginTop">
     <button class="button blue clear" id="getLayoutSpecifications">
-      🥷  Apply variable - layout 
+      🥷  Apply variable - layout
     </button>
      <button class="button clear" id="getColorSpecifications">
       🍡  Apply variable - colors
+    </button>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; font: 400 13px 'SF Pro Display';">
+      <label style="font: 400 13px 'SF Pro Display'; color:#555; margin:0;">Padding H</label>
+      <input type="number" id="paddingH" placeholder="16" min="0" style="width:52px; padding:4px 6px; border:1px solid #e6e6e6; border-radius:4px; font:400 13px 'SF Pro Display';">
+      <label style="font: 400 13px 'SF Pro Display'; color:#555; margin:0;">Padding V</label>
+      <input type="number" id="paddingV" placeholder="16" min="0" style="width:52px; padding:4px 6px; border:1px solid #e6e6e6; border-radius:4px; font:400 13px 'SF Pro Display';">
+      <label style="font: 400 13px 'SF Pro Display'; color:#555; margin:0;">Radius</label>
+      <input type="number" id="borderRadius" placeholder="16" min="0" style="width:52px; padding:4px 6px; border:1px solid #e6e6e6; border-radius:4px; font:400 13px 'SF Pro Display';">
+      <label style="font: 400 13px 'SF Pro Display'; color:#555; margin:0;">Align</label>
+      <select id="align" style="padding:4px 6px; border:1px solid #e6e6e6; border-radius:4px; font:400 13px 'SF Pro Display'; background:#f5f5f5; width:auto; float:none;">
+        <option value="CENTER" selected>Center</option>
+        <option value="MIN">Start</option>
+        <option value="MAX">End</option>
+        <option value="SPACE_BETWEEN">Space between</option>
+      </select>
+    </div>
+    <button class="button green clear" id="fixLayout">
+      🔧  Fix layout
     </button>
     </div>
   <p class="intro_cell_content" >Set color alias will assign color variable from remote library to the color variable local in the file</p>
@@ -171,6 +189,25 @@
      document.getElementById("getColorSpecifications").onclick = () => {
       parent.postMessage(
         { pluginMessage: { type: "getColorSpecifications" } },
+        "*"
+      );
+    };
+
+    document.getElementById("fixLayout").onclick = () => {
+      const paddingHVal = document.getElementById("paddingH").value;
+      const paddingVVal = document.getElementById("paddingV").value;
+      const borderRadiusVal = document.getElementById("borderRadius").value;
+      const alignVal = document.getElementById("align").value;
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: "fixLayout",
+            paddingH: paddingHVal !== "" ? Number(paddingHVal) : undefined,
+            paddingV: paddingVVal !== "" ? Number(paddingVVal) : undefined,
+            borderRadius: borderRadiusVal !== "" ? Number(borderRadiusVal) : undefined,
+            align: alignVal,
+          }
+        },
         "*"
       );
     };

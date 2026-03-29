@@ -214,30 +214,64 @@ figma.ui.onmessage = async (msg: Message) => {
       return;
     }
 
-    for (const node of selection) {
-      await traverseAndApply(
-        node,
-        {
-          spacingCollectionLocal,
-          borderRadiusCollectionLocal,
-          iconSizesCollectionLocal,
-          colorsCollectionLocal,
-        },
-        {
-          spacingCollectionRemote,
-          borderRadiusCollectionRemote,
-          iconSizesCollectionRemote,
-          colorsCollectionRemote,
-        },
-        {
-          spacingVarsRemote,
-          borderRadiusVarsRemote,
-          iconSizesVarsRemote,
-          colorsVarsRemote,
-        },
-        feedback,
-        msg,
-      );
+    if (msg.type === "fixLayout") {
+      const spacingFetchers: VariableFetcher[] = spacingCollectionLocal
+        ? spacingCollectionLocal.variableIds.map(
+            (id) => () => figma.variables.getVariableByIdAsync(id),
+          )
+        : spacingVarsRemote.map(
+            (v) => () => figma.variables.importVariableByKeyAsync(v.key),
+          );
+      const borderRadiusFetchers: VariableFetcher[] =
+        borderRadiusCollectionLocal
+          ? borderRadiusCollectionLocal.variableIds.map(
+              (id) => () => figma.variables.getVariableByIdAsync(id),
+            )
+          : borderRadiusVarsRemote.map(
+              (v) => () => figma.variables.importVariableByKeyAsync(v.key),
+            );
+      const paddingH = msg.paddingH ?? DEFAULT_PADDING_H;
+      const paddingV = msg.paddingV ?? DEFAULT_PADDING_V;
+      const borderRadius = msg.borderRadius ?? DEFAULT_BORDER_RADIUS;
+      const align = msg.align ?? "CENTER";
+      for (const node of selection) {
+        await traverseAndFixLayout(
+          node,
+          spacingFetchers,
+          borderRadiusFetchers,
+          paddingH,
+          paddingV,
+          borderRadius,
+          align,
+          feedback,
+        );
+      }
+    } else {
+      for (const node of selection) {
+        await traverseAndApply(
+          node,
+          {
+            spacingCollectionLocal,
+            borderRadiusCollectionLocal,
+            iconSizesCollectionLocal,
+            colorsCollectionLocal,
+          },
+          {
+            spacingCollectionRemote,
+            borderRadiusCollectionRemote,
+            iconSizesCollectionRemote,
+            colorsCollectionRemote,
+          },
+          {
+            spacingVarsRemote,
+            borderRadiusVarsRemote,
+            iconSizesVarsRemote,
+            colorsVarsRemote,
+          },
+          feedback,
+          msg,
+        );
+      }
     }
   }
 
@@ -261,6 +295,105 @@ interface RemoteVars {
   borderRadiusVarsRemote: Array<LibraryVariable>;
   iconSizesVarsRemote: Array<LibraryVariable>;
   colorsVarsRemote: Array<LibraryVariable>;
+}
+
+const DEFAULT_PADDING_H = 16;
+const DEFAULT_PADDING_V = 16;
+const DEFAULT_BORDER_RADIUS = 16;
+
+async function findVariableClosestTo(
+  value: number,
+  fetchers: VariableFetcher[],
+): Promise<Variable | null> {
+  let best: { variable: Variable; diff: number } | null = null;
+  for (const fetch of fetchers) {
+    const variable = await fetch();
+    if (!variable) continue;
+    for (const modeId in variable.valuesByMode) {
+      const v = variable.valuesByMode[modeId] as number;
+      if (v === value) return variable;
+      const diff = Math.abs(v - value);
+      if (!best || diff < best.diff) best = { variable, diff };
+    }
+  }
+  return best?.variable ?? null;
+}
+
+async function traverseAndFixLayout(
+  node: SceneNode,
+  spacingFetchers: VariableFetcher[],
+  borderRadiusFetchers: VariableFetcher[],
+  paddingH: number,
+  paddingV: number,
+  borderRadius: number,
+  align: "MIN" | "CENTER" | "MAX" | "SPACE_BETWEEN",
+  feedback: Array<string>,
+) {
+  if (
+    (node.type === "FRAME" || node.type === "COMPONENT") &&
+    "children" in node &&
+    node.children.length > 0
+  ) {
+    const direction = node.width >= node.height ? "HORIZONTAL" : "VERTICAL";
+    node.layoutMode = direction;
+    node.primaryAxisSizingMode = "AUTO";
+    node.counterAxisSizingMode = "AUTO";
+    node.primaryAxisAlignItems = align;
+    node.counterAxisAlignItems = align === "SPACE_BETWEEN" ? "MIN" : align;
+    node.paddingLeft = paddingH;
+    node.paddingRight = paddingH;
+    node.paddingTop = paddingV;
+    node.paddingBottom = paddingV;
+    node.topLeftRadius = borderRadius;
+    node.topRightRadius = borderRadius;
+    node.bottomLeftRadius = borderRadius;
+    node.bottomRightRadius = borderRadius;
+
+    const [paddingHVar, paddingVVar, borderRadiusVar] = await Promise.all([
+      findVariableClosestTo(paddingH, spacingFetchers),
+      findVariableClosestTo(paddingV, spacingFetchers),
+      findVariableClosestTo(borderRadius, borderRadiusFetchers),
+    ]);
+
+    if (paddingHVar) {
+      node.setBoundVariable("paddingLeft", paddingHVar);
+      node.setBoundVariable("paddingRight", paddingHVar);
+    }
+    if (paddingVVar) {
+      node.setBoundVariable("paddingTop", paddingVVar);
+      node.setBoundVariable("paddingBottom", paddingVVar);
+    }
+    if (borderRadiusVar) {
+      node.setBoundVariable("topLeftRadius", borderRadiusVar);
+      node.setBoundVariable("topRightRadius", borderRadiusVar);
+      node.setBoundVariable("bottomLeftRadius", borderRadiusVar);
+      node.setBoundVariable("bottomRightRadius", borderRadiusVar);
+    }
+
+    feedback.push(
+      `🔧 Fix layout ✓!!! 【${node.name}】 → ${direction} auto-layout` +
+        `\n   paddingH: ${paddingH}${paddingHVar ? ` → ${paddingHVar.name}` : " (no variable found)"}` +
+        `\n   paddingV: ${paddingV}${paddingVVar ? ` → ${paddingVVar.name}` : " (no variable found)"}` +
+        `\n   borderRadius: ${borderRadius}${borderRadiusVar ? ` → ${borderRadiusVar.name}` : " (no variable found)"}`,
+    );
+  } else if ("layoutMode" in node && node.layoutMode !== "NONE") {
+    feedback.push(`⏭️ 【${node.name}】 already has auto-layout, skipped`);
+  }
+
+  if ("children" in node) {
+    for (const child of node.children) {
+      await traverseAndFixLayout(
+        child,
+        spacingFetchers,
+        borderRadiusFetchers,
+        paddingH,
+        paddingV,
+        borderRadius,
+        align,
+        feedback,
+      );
+    }
+  }
 }
 
 async function traverseAndApply(
