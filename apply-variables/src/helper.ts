@@ -7,19 +7,17 @@ interface GetColors {
 interface SetColorAlias {
   type: "setColorAlias";
 }
-interface SwapComponent {
-  type: "swapComponent";
-}
-export type Message = GetLayout | GetColors | SetColorAlias | SwapComponent;
+
+export type Message = GetLayout | GetColors | SetColorAlias;
 
 export const findLocalCollectionByName = (
   name: string,
-  collectionsLocal: Array<VariableCollection>
+  collectionsLocal: Array<VariableCollection>,
 ) => collectionsLocal.find((c) => c.name === name);
 
 export const findRemoteCollectionByName = (
   name: string,
-  collectionsRemote: Array<LibraryVariableCollection>
+  collectionsRemote: Array<LibraryVariableCollection>,
 ) => collectionsRemote.find((c) => c.name === name);
 
 type ValidNodeType =
@@ -59,7 +57,7 @@ export type WithSpacingPaddingBorderRadiusNode =
   | ComponentNode
   | InstanceNode;
 export const isWithSpacingPaddingBorderRadiusNodeType = (
-  node: SceneNode
+  node: SceneNode,
 ): node is WithSpacingPaddingBorderRadiusNode =>
   node.type === "FRAME" ||
   node.type === "COMPONENT" ||
@@ -74,7 +72,7 @@ export type WithColorFillNode =
   | EllipseNode
   | VectorNode;
 export const isWithColorFillNodeType = (
-  node: SceneNode
+  node: SceneNode,
 ): node is WithColorFillNode =>
   node.type === "FRAME" ||
   node.type === "COMPONENT" ||
@@ -175,7 +173,7 @@ export const rgbToHex = ({
 
 export const colorVariableScopeMatchTextNode = (
   node: SceneNode,
-  variable: Variable
+  variable: Variable,
 ) =>
   node.type === "TEXT" &&
   (variable.scopes.includes("ALL_SCOPES") ||
@@ -184,7 +182,7 @@ export const colorVariableScopeMatchTextNode = (
 
 export const colorVariableScopeMatchSVGNode = (
   node: SceneNode,
-  variable: Variable
+  variable: Variable,
 ) =>
   (node.type === "ELLIPSE" || node.type === "VECTOR") &&
   (variable.scopes.includes("ALL_SCOPES") ||
@@ -195,7 +193,7 @@ export const colorVariableScopeMatchSVGNode = (
 
 export const colorVariableScopeMatchWithBgNode = (
   node: SceneNode,
-  variable: Variable
+  variable: Variable,
 ) =>
   (node.type === "COMPONENT" ||
     node.type === "FRAME" ||
@@ -214,7 +212,7 @@ export const variableScopeNone = (variable: Variable) =>
 
 export const isMatchScopeVariableAndNodeSet = (
   node: SceneNode,
-  variable: Variable
+  variable: Variable,
 ) =>
   colorVariableScopeMatchTextNode(node, variable) ||
   colorVariableScopeMatchSVGNode(node, variable) ||

@@ -155,9 +155,7 @@
   <button class="button yellow clear" id="setColorAlias">
       🪼  Set color alias
     </button>
-      <!-- <button class="button green clear" id="swapComponent">
-      🥑  Swap component
-    </button> -->
+   
   </div>
 
   <p class="marginTop" id="code"></p>
@@ -184,18 +182,11 @@
       );
     };
 
-  document.getElementById("swapComponent").onclick = () => {
-      parent.postMessage(
-        { pluginMessage: { type: "swapComponent" } },
-        "*"
-      );
-    };
-    
 
     const codebox = document.getElementById("code");
     onmessage = (event) => {
-     
       const reactStr = event.data.pluginMessage;
+      if (reactStr === "ready") return;
       codebox.innerText = reactStr;
 
       const copyInput = document.getElementById("copy");
