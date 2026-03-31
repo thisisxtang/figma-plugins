@@ -32,10 +32,12 @@ interface CollectionsCache {
   borderRadiusCollectionRemote?: LibraryVariableCollection;
   iconSizesCollectionRemote?: LibraryVariableCollection;
   colorsCollectionRemote?: LibraryVariableCollection;
+  baseColorsCollectionRemote?: LibraryVariableCollection;
   spacingVarsRemote: Array<LibraryVariable>;
   borderRadiusVarsRemote: Array<LibraryVariable>;
   iconSizesVarsRemote: Array<LibraryVariable>;
   colorsVarsRemote: Array<LibraryVariable>;
+  baseColorsVarsRemote: Array<LibraryVariable>;
 }
 
 let cache: CollectionsCache | null = null;
@@ -76,6 +78,10 @@ async function preloadCollections(): Promise<CollectionsCache> {
     collectionsRemote,
   );
   const colorsCollectionRemote = findRemoteCollectionByName(
+    "colors",
+    collectionsRemote,
+  );
+  const baseColorsCollectionRemote = findRemoteCollectionByName(
     "baseColors",
     collectionsRemote,
   );
@@ -85,6 +91,7 @@ async function preloadCollections(): Promise<CollectionsCache> {
     borderRadiusVarsRemote,
     iconSizesVarsRemote,
     colorsVarsRemote,
+    baseColorsVarsRemote,
   ] = await Promise.all([
     spacingCollectionRemote
       ? figma.teamLibrary.getVariablesInLibraryCollectionAsync(
@@ -106,6 +113,11 @@ async function preloadCollections(): Promise<CollectionsCache> {
           colorsCollectionRemote.key,
         )
       : Promise.resolve([]),
+    baseColorsCollectionRemote
+      ? figma.teamLibrary.getVariablesInLibraryCollectionAsync(
+          baseColorsCollectionRemote.key,
+        )
+      : Promise.resolve([]),
   ]);
 
   return {
@@ -117,10 +129,12 @@ async function preloadCollections(): Promise<CollectionsCache> {
     borderRadiusCollectionRemote,
     iconSizesCollectionRemote,
     colorsCollectionRemote,
+    baseColorsCollectionRemote,
     spacingVarsRemote,
     borderRadiusVarsRemote,
     iconSizesVarsRemote,
     colorsVarsRemote,
+    baseColorsVarsRemote,
   };
 }
 
@@ -144,10 +158,12 @@ figma.ui.onmessage = async (msg: Message) => {
     borderRadiusCollectionRemote,
     iconSizesCollectionRemote,
     colorsCollectionRemote,
+    baseColorsCollectionRemote,
     spacingVarsRemote,
     borderRadiusVarsRemote,
     iconSizesVarsRemote,
     colorsVarsRemote,
+    baseColorsVarsRemote,
   } = cache;
 
   const selection = figma.currentPage.selection;
@@ -155,7 +171,7 @@ figma.ui.onmessage = async (msg: Message) => {
 
   if (msg.type === "setColorAlias") {
     feedback.push("❤︎ 🕵🏻‍♀️ ☞ : Set alias");
-    if (colorsCollectionLocal && colorsCollectionRemote) {
+    if (colorsCollectionLocal && baseColorsCollectionRemote) {
       for (const variableId of colorsCollectionLocal.variableIds) {
         const localVariableById =
           await figma.variables.getVariableByIdAsync(variableId);
@@ -169,7 +185,7 @@ figma.ui.onmessage = async (msg: Message) => {
             if ("type" in localValue && localValue.type === "VARIABLE_ALIAS") {
               setAlias = true;
             }
-            for (const remoteVariableId of colorsVarsRemote) {
+            for (const remoteVariableId of baseColorsVarsRemote) {
               if (setAlias) break;
               const importedVariable =
                 await figma.variables.importVariableByKeyAsync(
