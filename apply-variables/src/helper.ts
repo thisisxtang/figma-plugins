@@ -105,6 +105,7 @@ export interface Layout {
   height?: number;
   fills?: ReadonlyArray<Paint> | symbol;
   boundVariables: any;
+  strokeWeight?: number;
 }
 export const validAttributesForSpacingVariables = [
   "paddingLeft",
@@ -123,8 +124,18 @@ export const validAttributesForIconSizesVariables = [
   "width",
   "height",
 ] as const;
+export const validAttributesForBorderWidthVariables = [
+  "strokeTopWeight",
+  "strokeRightWeight",
+  "strokeBottomWeight",
+  "strokeLeftWeight",
+] as const;
 
-export type ApplyVariableKey = "spacing" | "borderRadius" | "iconSizes";
+export type ApplyVariableKey =
+  | "spacing"
+  | "borderRadius"
+  | "iconSizes"
+  | "borderWidth";
 export const mkBindableNodeField = (key: ApplyVariableKey) => {
   switch (key) {
     case "spacing":
@@ -133,6 +144,8 @@ export const mkBindableNodeField = (key: ApplyVariableKey) => {
       return validAttributesForBorderRadiusVariables;
     case "iconSizes":
       return validAttributesForIconSizesVariables;
+    case "borderWidth":
+      return validAttributesForBorderWidthVariables;
   }
 };
 

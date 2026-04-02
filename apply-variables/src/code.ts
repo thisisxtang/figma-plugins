@@ -28,16 +28,19 @@ interface CollectionsCache {
   borderRadiusCollectionLocal?: VariableCollection;
   iconSizesCollectionLocal?: VariableCollection;
   colorsCollectionLocal?: VariableCollection;
+  borderWidthCollectionLocal?: VariableCollection;
   spacingCollectionRemote?: LibraryVariableCollection;
   borderRadiusCollectionRemote?: LibraryVariableCollection;
   iconSizesCollectionRemote?: LibraryVariableCollection;
   colorsCollectionRemote?: LibraryVariableCollection;
   baseColorsCollectionRemote?: LibraryVariableCollection;
+  borderWidthCollectionRemote?: LibraryVariableCollection;
   spacingVarsRemote: Array<LibraryVariable>;
   borderRadiusVarsRemote: Array<LibraryVariable>;
   iconSizesVarsRemote: Array<LibraryVariable>;
   colorsVarsRemote: Array<LibraryVariable>;
   baseColorsVarsRemote: Array<LibraryVariable>;
+  borderWidthVarsRemote: Array<LibraryVariable>;
 }
 
 let cache: CollectionsCache | null = null;
@@ -64,6 +67,10 @@ async function preloadCollections(): Promise<CollectionsCache> {
     "colors",
     collectionsLocal,
   );
+  const borderWidthCollectionLocal = findLocalCollectionByName(
+    "borderWidth",
+    collectionsLocal,
+  );
 
   const spacingCollectionRemote = findRemoteCollectionByName(
     "spacing",
@@ -85,6 +92,10 @@ async function preloadCollections(): Promise<CollectionsCache> {
     "baseColors",
     collectionsRemote,
   );
+  const borderWidthCollectionRemote = findRemoteCollectionByName(
+    "borderWidth",
+    collectionsRemote,
+  );
 
   const [
     spacingVarsRemote,
@@ -92,6 +103,7 @@ async function preloadCollections(): Promise<CollectionsCache> {
     iconSizesVarsRemote,
     colorsVarsRemote,
     baseColorsVarsRemote,
+    borderWidthVarsRemote,
   ] = await Promise.all([
     spacingCollectionRemote
       ? figma.teamLibrary.getVariablesInLibraryCollectionAsync(
@@ -118,6 +130,11 @@ async function preloadCollections(): Promise<CollectionsCache> {
           baseColorsCollectionRemote.key,
         )
       : Promise.resolve([]),
+    borderWidthCollectionRemote
+      ? figma.teamLibrary.getVariablesInLibraryCollectionAsync(
+          borderWidthCollectionRemote.key,
+        )
+      : Promise.resolve([]),
   ]);
 
   return {
@@ -125,16 +142,19 @@ async function preloadCollections(): Promise<CollectionsCache> {
     borderRadiusCollectionLocal,
     iconSizesCollectionLocal,
     colorsCollectionLocal,
+    borderWidthCollectionLocal,
     spacingCollectionRemote,
     borderRadiusCollectionRemote,
     iconSizesCollectionRemote,
     colorsCollectionRemote,
     baseColorsCollectionRemote,
+    borderWidthCollectionRemote,
     spacingVarsRemote,
     borderRadiusVarsRemote,
     iconSizesVarsRemote,
     colorsVarsRemote,
     baseColorsVarsRemote,
+    borderWidthVarsRemote,
   };
 }
 
@@ -154,16 +174,19 @@ figma.ui.onmessage = async (msg: Message) => {
     borderRadiusCollectionLocal,
     iconSizesCollectionLocal,
     colorsCollectionLocal,
+    borderWidthCollectionLocal,
     spacingCollectionRemote,
     borderRadiusCollectionRemote,
     iconSizesCollectionRemote,
     colorsCollectionRemote,
     baseColorsCollectionRemote,
+    borderWidthCollectionRemote,
     spacingVarsRemote,
     borderRadiusVarsRemote,
     iconSizesVarsRemote,
     colorsVarsRemote,
     baseColorsVarsRemote,
+    borderWidthVarsRemote,
   } = cache;
 
   const selection = figma.currentPage.selection;
@@ -271,18 +294,21 @@ figma.ui.onmessage = async (msg: Message) => {
             borderRadiusCollectionLocal,
             iconSizesCollectionLocal,
             colorsCollectionLocal,
+            borderWidthCollectionLocal,
           },
           {
             spacingCollectionRemote,
             borderRadiusCollectionRemote,
             iconSizesCollectionRemote,
             colorsCollectionRemote,
+            borderWidthCollectionRemote,
           },
           {
             spacingVarsRemote,
             borderRadiusVarsRemote,
             iconSizesVarsRemote,
             colorsVarsRemote,
+            borderWidthVarsRemote,
           },
           feedback,
           msg,
@@ -299,18 +325,21 @@ interface CollectionLocal {
   borderRadiusCollectionLocal?: VariableCollection;
   iconSizesCollectionLocal?: VariableCollection;
   colorsCollectionLocal?: VariableCollection;
+  borderWidthCollectionLocal?: VariableCollection;
 }
 interface CollectionRemote {
   spacingCollectionRemote?: LibraryVariableCollection;
   borderRadiusCollectionRemote?: LibraryVariableCollection;
   iconSizesCollectionRemote?: LibraryVariableCollection;
   colorsCollectionRemote?: LibraryVariableCollection;
+  borderWidthCollectionRemote?: LibraryVariableCollection;
 }
 interface RemoteVars {
   spacingVarsRemote: Array<LibraryVariable>;
   borderRadiusVarsRemote: Array<LibraryVariable>;
   iconSizesVarsRemote: Array<LibraryVariable>;
   colorsVarsRemote: Array<LibraryVariable>;
+  borderWidthVarsRemote: Array<LibraryVariable>;
 }
 
 const DEFAULT_PADDING_H = 16;
@@ -337,8 +366,8 @@ async function findVariableClosestTo(
 
 async function traverseAndFixLayout(
   node: SceneNode,
-  spacingFetchers: VariableFetcher[],
-  borderRadiusFetchers: VariableFetcher[],
+  spacingFetchers: Array<VariableFetcher>,
+  borderRadiusFetchers: Array<VariableFetcher>,
   paddingH: number,
   paddingV: number,
   borderRadius: number,
@@ -429,18 +458,21 @@ async function traverseAndApply(
     borderRadiusCollectionLocal,
     iconSizesCollectionLocal,
     colorsCollectionLocal,
+    borderWidthCollectionLocal,
   } = collectionsLocal;
   const {
     spacingCollectionRemote,
     borderRadiusCollectionRemote,
     colorsCollectionRemote,
     iconSizesCollectionRemote,
+    borderWidthCollectionRemote,
   } = collectionsRemote;
   const {
     spacingVarsRemote,
     borderRadiusVarsRemote,
     iconSizesVarsRemote,
     colorsVarsRemote,
+    borderWidthVarsRemote,
   } = remoteVars;
 
   if (isValidNodeType(node)) {
@@ -495,6 +527,31 @@ async function traverseAndApply(
             feedback,
             "borderRadius",
             borderRadiusSource,
+          );
+        }
+
+        if (!borderWidthCollectionLocal && !borderWidthCollectionRemote) {
+          feedback.push(
+            "❌ ⛳️LOCAL and 📚LIBRARY: No borderWidth variable collection found",
+          );
+        } else {
+          const borderWidthFetchers: Array<VariableFetcher> =
+            borderWidthCollectionLocal
+              ? borderWidthCollectionLocal.variableIds.map(
+                  (id) => () => figma.variables.getVariableByIdAsync(id),
+                )
+              : borderWidthVarsRemote.map(
+                  (v) => () => figma.variables.importVariableByKeyAsync(v.key),
+                );
+          const borderWidthSource = borderWidthCollectionLocal
+            ? "⛳️ LOCAL"
+            : "📚 LIBRARY";
+          await applyLayoutVariables(
+            node,
+            borderWidthFetchers,
+            feedback,
+            "borderWidth",
+            borderWidthSource,
           );
         }
 
@@ -599,7 +656,9 @@ async function applyLayoutVariables(
     let appliedVariable = false;
     let closestVariable: ClosestVariable | undefined = undefined;
 
-    if ((node[attribute] as number) === 0) {
+    const nodeValue = node[attribute];
+
+    if (nodeValue === 0) {
       appliedVariable = true;
     } else {
       for (const fetch of fetchers) {
@@ -608,17 +667,15 @@ async function applyLayoutVariables(
         if (variable) {
           for (const modeId in variable.valuesByMode) {
             const value = variable.valuesByMode[modeId];
-            if (value === node[attribute]) {
+            if (value === nodeValue) {
               node.setBoundVariable(attribute, variable);
               msg.push(
-                `${source}: ${msgTitle} ✓!!! ${attribute}(${node[attribute]}) - ${variable.name}(${value})`,
+                `${source}: ${msgTitle} ✓!!! ${attribute}(${nodeValue}) - ${variable.name}(${value})`,
               );
               appliedVariable = true;
               break;
             } else {
-              const valueDifference = Math.abs(
-                (value as number) - node[attribute],
-              );
+              const valueDifference = Math.abs((value as number) - nodeValue);
               if (
                 !closestVariable ||
                 valueDifference < closestVariable.valueDifference
@@ -627,7 +684,7 @@ async function applyLayoutVariables(
                   v: variable,
                   valueDifference,
                   newValue: value as number,
-                  originalValue: node[attribute],
+                  originalValue: nodeValue,
                 };
               }
             }
@@ -644,7 +701,7 @@ async function applyLayoutVariables(
     }
     if (!appliedVariable) {
       msg.push(
-        `${source}: ${msgTitle} ⁉️!!! ${attribute} - ${node[attribute]} can not find equal variable`,
+        `${source}: ${msgTitle} ⁉️!!! ${attribute} - ${nodeValue} can not find equal variable`,
       );
     }
   }
